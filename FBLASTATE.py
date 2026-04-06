@@ -6,157 +6,243 @@ import pandas as pd
 from PIL import Image, ImageTk
 import os
 import ast
+from tkinter import font as tkfont
 
-#loginScreen- user logs in with username and password
+# ============================================================
+# DESIGN SYSTEM — colors, fonts, sizes
+# ============================================================
+BG         = "#f0f4f8"
+HEADER_BG  = "#1e3a5f"
+CARD_BG    = "#ffffff"
+CARD_HOVER = "#eff6ff"
+BORDER     = "#d1dce8"
+PRIMARY    = "#2563eb"
+PRIMARY_DK = "#1d4ed8"
+TEXT_DK    = "#1e293b"
+TEXT_MD    = "#475569"
+TEXT_LT    = "#94a3b8"
+WHITE      = "#ffffff"
+SUCCESS    = "#16a34a"
+ERROR_RED  = "#dc2626"
+STAR_GOLD  = "#f59e0b"
+INPUT_BG   = "#ffffff"
+INPUT_BD   = "#cbd5e1"
+
+FONT_TITLE  = ("Segoe UI", 28, "bold")
+FONT_H1     = ("Segoe UI", 16, "bold")
+FONT_H2     = ("Segoe UI", 13, "bold")
+FONT_BODY   = ("Segoe UI", 11)
+FONT_SMALL  = ("Segoe UI", 9)
+FONT_BTN    = ("Segoe UI", 11, "bold")
+FONT_CARD   = ("Segoe UI", 12, "bold")
+
+# ============================================================
+# TTK STYLE SETUP
+# ============================================================
+def applyStyles():
+    style = ttk.Style()
+    style.theme_use("clam")
+    style.configure("TCombobox",
+        fieldbackground=INPUT_BG, background=INPUT_BG,
+        foreground=TEXT_DK, bordercolor=INPUT_BD,
+        lightcolor=INPUT_BD, darkcolor=INPUT_BD,
+        relief="flat", padding=(8, 6), font=FONT_BODY)
+    style.map("TCombobox", fieldbackground=[("readonly", INPUT_BG)])
+
+# ============================================================
+# HELPER — styled widgets
+# ============================================================
+def makeButton(parent, text, command, style="primary", width=None):
+    if style == "primary":
+        bg, fg, abg = PRIMARY, WHITE, PRIMARY_DK
+    elif style == "ghost":
+        bg, fg, abg = WHITE, PRIMARY, CARD_HOVER
+    elif style == "danger":
+        bg, fg, abg = ERROR_RED, WHITE, "#b91c1c"
+    elif style == "success":
+        bg, fg, abg = SUCCESS, WHITE, "#15803d"
+    else:
+        bg, fg, abg = PRIMARY, WHITE, PRIMARY_DK
+    kw = dict(text=text, command=command, font=FONT_BTN,
+              bg=bg, fg=fg, activebackground=abg, activeforeground=fg,
+              relief="flat", cursor="hand2", bd=0, padx=16, pady=8)
+    if width:
+        kw["width"] = width
+    btn = Button(parent, **kw)
+    btn.bind("<Enter>", lambda e: btn.config(bg=abg))
+    btn.bind("<Leave>", lambda e: btn.config(bg=bg))
+    return btn
+
+def makeEntry(parent, width=30, show=None):
+    kw = dict(font=FONT_BODY, bg=INPUT_BG, fg=TEXT_DK,
+              insertbackground=TEXT_DK, relief="flat",
+              highlightthickness=1, highlightbackground=INPUT_BD,
+              highlightcolor=PRIMARY, bd=0, width=width)
+    if show:
+        kw["show"] = show
+    return Entry(parent, **kw)
+
+# ============================================================
+# BUSINESS LOGIC — unchanged
+# ============================================================
+
 def loginScreen():
-    usernameInput.pack()
-    passwordInput.pack()
+    usernameInput.pack(pady=(0, 8))
+    passwordInput.pack(pady=(0, 8))
     emailInput.pack_forget()
     startText.pack_forget()
-    loginCompletedButton.pack()
+    loginCompletedButton.pack(pady=(4, 0))
     createAccountCompletedButton.pack_forget()
-    startText.pack()
-#create new account screen- user inputs username, email, and password
+    startText.pack(pady=(8, 0))
+
 def newAccountScreen():
-    usernameInput.pack()
-    emailInput.pack()
-    passwordInput.pack()
+    usernameInput.pack(pady=(0, 8))
+    emailInput.pack(pady=(0, 8))
+    passwordInput.pack(pady=(0, 8))
     startText.pack_forget()
-    createAccountCompletedButton.pack()
+    createAccountCompletedButton.pack(pady=(4, 0))
     loginCompletedButton.pack_forget()
-    startText.pack()
-#on event user clicks log in- app checks to be sure account exists and is correct password
+    startText.pack(pady=(8, 0))
+
 def login(username, password):
     index = accountDatabase.index[accountDatabase['Username']==username].tolist()
     if not index:
-        startText.config(text = 'Account Not Found')
+        startText.config(text='Account Not Found', fg=ERROR_RED)
     elif accountDatabase.loc[index[0], 'Password'] != password:
-        startText.config(text = 'Incorrect Password')
+        startText.config(text='Incorrect Password', fg=ERROR_RED)
     else:
         global accountInUse
         accountInUse = index[0]
         setHomeScreen()
-#on event user confirms account creation, app checks that account doesnt already exist and creates it if valid
+
 def createAccount(username, password, email, type):
     index = accountDatabase.index[accountDatabase['Username']==username].tolist()
     if index:
-        startText.config(text = 'Username is Unavailable')
+        startText.config(text='Username is Unavailable', fg=ERROR_RED)
     else:
         global accountInUse
         accountInUse = len(accountDatabase)
         accountDatabase.loc[len(accountDatabase)] = [username, password, email, 0, [], [], type, []]
         saveData()
         setHomeScreen()
-#puts the menuBar on the top of the screen, will contain different functions based on type of user
+
 def showMenu():
     menuBar.delete(0, 'end')
-    fileMenu = Menu(menuBar, tearoff =0)
-    fileMenu.add_command(label = "Log Out", command = lambda:logOut())
-    fileMenu.add_command(label = "Exit", command = lambda:startScreen.quit())
-    menuBar.add_cascade(label = "Account", menu = fileMenu)
-    startScreen.config(menu = menuBar)
+    fileMenu = Menu(menuBar, tearoff=0, bg=HEADER_BG, fg=WHITE,
+                    activebackground=PRIMARY, activeforeground=WHITE, font=FONT_BODY)
+    fileMenu.add_command(label="Log Out", command=lambda: logOut())
+    fileMenu.add_command(label="Exit", command=lambda: startScreen.quit())
+    menuBar.add_cascade(label="Account", menu=fileMenu)
+    startScreen.config(menu=menuBar)
     global accountInUse
     if accountDatabase.loc[accountInUse, 'Type'] == 'Owner':
-        manageMenu = Menu(menuBar, tearoff = 0)
-        manageMenu.add_command(label = "Add Business", command=addBusinessScreen)
-        if isinstance(accountDatabase.loc[accountInUse, 'Businesses'],list) and accountDatabase.loc[accountInUse, 'Businesses']:
-            editMenu = Menu(manageMenu, tearoff=0)
+        manageMenu = Menu(menuBar, tearoff=0, bg=HEADER_BG, fg=WHITE,
+                          activebackground=PRIMARY, activeforeground=WHITE, font=FONT_BODY)
+        manageMenu.add_command(label="Add Business", command=addBusinessScreen)
+        if isinstance(accountDatabase.loc[accountInUse, 'Businesses'], list) and accountDatabase.loc[accountInUse, 'Businesses']:
+            editMenu = Menu(manageMenu, tearoff=0, bg=HEADER_BG, fg=WHITE,
+                            activebackground=PRIMARY, activeforeground=WHITE, font=FONT_BODY)
             for item in accountDatabase.loc[accountInUse, 'Businesses']:
-                editMenu.add_command(label = item, command = lambda i=item:editBusiness(i))
-            manageMenu.add_cascade(label = 'Edit', menu = editMenu)
-        menuBar.add_cascade(label = "Manage", menu = manageMenu)
-#logs user out
+                editMenu.add_command(label=item, command=lambda i=item: editBusiness(i))
+            manageMenu.add_cascade(label='Edit', menu=editMenu)
+        menuBar.add_cascade(label="Manage", menu=manageMenu)
+
 def logOut():
-    createNewAccountButton.pack()
-    loginButton.pack()
+    # Show auth screen
+    for widget in startScreen.winfo_children():
+        if not isinstance(widget, (Tk, Toplevel)):
+            widget.pack_forget()
+    titleText.pack(fill="x")
+    authWrapper.pack(expand=True)
+    createNewAccountButton.pack(pady=(0, 6))
+    loginButton.pack(pady=(0, 0))
     usernameInput.delete(0, END)
     passwordInput.delete(0, END)
     emailInput.delete(0, END)
     usernameInput.insert(0, 'Enter Username')
-    passwordInput.insert(0,'Enter Password')
-    emailInput.insert(0,'Enter Email')
-    usernameInput.config(fg = 'grey')
-    passwordInput.config(fg = 'grey')
-    emailInput.config(fg = 'grey')
+    passwordInput.insert(0, 'Enter Password')
+    emailInput.insert(0, 'Enter Email')
+    usernameInput.config(fg='grey')
+    passwordInput.config(fg='grey')
+    emailInput.config(fg='grey')
     global accountInUse
     accountInUse = -1
-    startScreen.config(menu = None)
-#specifies the type of account to be created- either customer or owner
+    startScreen.config(menu=None)
+
 def accountType():
-    if usernameInput.get() == "Enter Username" or usernameInput.get() == "":
-        startText.config(text = "Enter a valid username")
-    elif emailInput.get() == "Enter Email" or emailInput.get() == "":
-        startText.config(text = "Enter a valid email")
-    elif passwordInput.get() == "Enter Password" or passwordInput.get() == "":
-        startText.config(text = "Enter a valid password")
+    if usernameInput.get() in ("Enter Username", ""):
+        startText.config(text="Enter a valid username", fg=ERROR_RED)
+    elif emailInput.get() in ("Enter Email", ""):
+        startText.config(text="Enter a valid email", fg=ERROR_RED)
+    elif passwordInput.get() in ("Enter Password", ""):
+        startText.config(text="Enter a valid password", fg=ERROR_RED)
     else:
         global accountInUse
         clearScreen()
-        startText.pack()
-        startText.config(text = "I am a...")
-        customerButton.pack()
-        ownerButton.pack()
-#image upload
+        startText.pack(pady=(20, 12))
+        startText.config(text="I am a...", fg=TEXT_MD, font=FONT_H1, bg=BG)
+        customerButton.pack(pady=(0, 8))
+        ownerButton.pack(pady=(0, 8))
+
 def uploadFile():
     global filePath
     filePath = filedialog.askopenfilename()
     if filePath:
-        businessImageInput.config(bg = 'green')
-        createBusinessText.config(text = "File Path: " + filePath)
+        businessImageInput.config(bg=SUCCESS, fg=WHITE)
+        createBusinessText.config(text="Image selected!", fg=SUCCESS)
     else:
-        createBusinessText.config(text = "No file selected")
-#on event owner wants to create a new business
+        createBusinessText.config(text="No file selected", fg=ERROR_RED)
+
 def addBusinessScreen():
     clearScreen()
     businessDescriptionInput.delete(0, END)
     businessLocationInput.delete(0, END)
     businessNameInput.delete(0, END)
     businessNameInput.insert(0, 'Business Name')
-    businessLocationInput.insert(0,'Business Location')
-    businessDescriptionInput.insert(0,'Business Description')
-    businessDescriptionInput.config(fg = 'grey')
-    businessNameInput.config(fg = 'grey')
-    businessLocationInput.config(fg = 'grey')
-    createBusinessTitle.pack()
-    businessNameInput.pack()
-    businessCategoryInput.pack()
-    businessLocationInput.pack()
-    businessDescriptionInput.pack()
-    businessImageInput.pack()
-    createBusinessButton.pack()
-    createBusinessText.pack()
-#used to create placeholders- allow entries to clear text when clicked, and place placeholder back in once unclicked
+    businessLocationInput.insert(0, 'Business Location')
+    businessDescriptionInput.insert(0, 'Business Description')
+    businessDescriptionInput.config(fg='grey')
+    businessNameInput.config(fg='grey')
+    businessLocationInput.config(fg='grey')
+    createBusinessTitle.pack(pady=(20, 16))
+    businessNameInput.pack(pady=(0, 8))
+    businessCategoryInput.pack(pady=(0, 8))
+    businessLocationInput.pack(pady=(0, 8))
+    businessDescriptionInput.pack(pady=(0, 8))
+    businessImageInput.pack(pady=(0, 8))
+    createBusinessButton.pack(pady=(8, 4))
+    createBusinessText.pack(pady=(4, 0))
+
 def addPlaceholder(entry, placeholderText):
     entry.insert(0, placeholderText)
-    entry.config(fg = 'grey')
+    entry.config(fg='grey')
     def on_focus_in(event):
         if entry.get() == placeholderText:
             entry.delete(0, END)
-            entry.config(fg = 'black')
+            entry.config(fg=TEXT_DK)
     def on_focus_out(event):
         if entry.get() == "":
             entry.insert(0, placeholderText)
-            entry.config(fg = 'grey')
+            entry.config(fg='grey')
     entry.bind("<FocusIn>", on_focus_in)
     entry.bind("<FocusOut>", on_focus_out)
-#on event owner finalizes business- adds to business Dataframe
+
 def createBusiness(name, location, description):
-    businessImageInput.config(bg = 'SystemButtonFace')
+    businessImageInput.config(bg=PRIMARY, fg=WHITE)
     index = businessDatabase.index[businessDatabase['Name']==name].tolist()
-    global filePath
-    global accountInUse
+    global filePath, accountInUse
     if index:
-        createBusinessText.config(text = 'Business is Already Created')
-    elif businessNameInput.get()=="Business Name":
-        createBusinessText.config(text = "Enter valid name")
-    elif businessLocationInput.get()=="Business Location":
-        createBusinessText.config(text = "Enter valid location")
+        createBusinessText.config(text='Business Already Created', fg=ERROR_RED)
+    elif businessNameInput.get() == "Business Name":
+        createBusinessText.config(text="Enter valid name", fg=ERROR_RED)
+    elif businessLocationInput.get() == "Business Location":
+        createBusinessText.config(text="Enter valid location", fg=ERROR_RED)
     elif selectedCategory.get() == "Select Category":
-        createBusinessText.config(text = "Select a category")
-    elif businessDescriptionInput.get()=="Business Description":
-        createBusinessText.config(text = "Enter valid description")
+        createBusinessText.config(text="Select a category", fg=ERROR_RED)
+    elif businessDescriptionInput.get() == "Business Description":
+        createBusinessText.config(text="Enter valid description", fg=ERROR_RED)
     elif not filePath:
-        createBusinessText.config(text = "Upload Image")
+        createBusinessText.config(text="Upload an image", fg=ERROR_RED)
     else:
         businessDatabase.loc[len(businessDatabase)] = [name, location, filePath, description, selectedCategory.get(), 0.0, 0, 0, []]
         if not isinstance(accountDatabase.at[accountInUse, 'Businesses'], list):
@@ -165,21 +251,16 @@ def createBusiness(name, location, description):
         saveData()
         setHomeScreen()
         filePath = ""
-        createBusinessText.config(text = "")
+        createBusinessText.config(text="")
         businessCategoryInput.set("Select Category")
-#on event owner wants to edit business, assigns new values
+
 def updateBusiness(updatedValue, type, index):
-    if type == "Name":
-        businessDatabase.loc[index, "Name"] = updatedValue
-    if type == "Location":
-        businessDatabase.loc[index, "Location"] = updatedValue
-    if type == "Description":
-        businessDatabase.loc[index, "Description"] = updatedValue
-    if type == "Category":
-        businessDatabase.loc[index, "Category"] = updatedValue
-    if type == "Image":
-        businessDatabase.loc[index, "Image"] = updatedValue
-#when user wants to edit a business
+    if type == "Name":        businessDatabase.loc[index, "Name"] = updatedValue
+    if type == "Location":    businessDatabase.loc[index, "Location"] = updatedValue
+    if type == "Description": businessDatabase.loc[index, "Description"] = updatedValue
+    if type == "Category":    businessDatabase.loc[index, "Category"] = updatedValue
+    if type == "Image":       businessDatabase.loc[index, "Image"] = updatedValue
+
 def editBusiness(item):
     clearScreen()
     global currentBusinessIndex
@@ -193,23 +274,23 @@ def editBusiness(item):
     editBusinessLocationInput.insert(0, businessDatabase.loc[currentBusinessIndex, "Location"])
     editBusinessDescriptionInput.delete(0, END)
     editBusinessDescriptionInput.insert(0, businessDatabase.loc[currentBusinessIndex, "Description"])
-    editSelectedCategory.insert(0, businessDatabase.loc[currentBusinessIndex, "Category"])
-    editBusinessNameInput.pack()
-    editBusinessLocationInput.pack()
-    editBusinessCategoryInput.pack()
-    editBusinessDescriptionInput.pack()
-    editBusinessImageInput.pack()
-    editBusinessButton.pack()
-#when changes are finalized, calls updateBusiness in order to pdate values
+    editSelectedCategory.set(businessDatabase.loc[currentBusinessIndex, "Category"])
+    editBusinessTitle.pack(pady=(20, 16))
+    editBusinessNameInput.pack(pady=(0, 8))
+    editBusinessLocationInput.pack(pady=(0, 8))
+    editBusinessCategoryInput.pack(pady=(0, 8))
+    editBusinessDescriptionInput.pack(pady=(0, 8))
+    editBusinessImageInput.pack(pady=(0, 8))
+    editBusinessButton.pack(pady=(8, 4))
+
 def finalizeEdits():
-    global currentBusinessIndex
-    global filePath
+    global currentBusinessIndex, filePath
     index = currentBusinessIndex
-    if editBusinessNameInput.get() != "" and editBusinessNameInput.get() != "Business Name" :
+    if editBusinessNameInput.get() not in ("", "Business Name"):
         updateBusiness(editBusinessNameInput.get(), "Name", index)
-    if editBusinessLocationInput.get() != "" and editBusinessLocationInput.get() != "Business Location" :
+    if editBusinessLocationInput.get() not in ("", "Business Location"):
         updateBusiness(editBusinessLocationInput.get(), "Location", index)
-    if editBusinessDescriptionInput.get() != "" and editBusinessDescriptionInput.get() != "Business Description" :
+    if editBusinessDescriptionInput.get() not in ("", "Business Description"):
         updateBusiness(editBusinessDescriptionInput.get(), "Description", index)
     if editSelectedCategory.get() != "Select Category":
         updateBusiness(editSelectedCategory.get(), "Category", index)
@@ -217,256 +298,446 @@ def finalizeEdits():
         updateBusiness(filePath, "Image", index)
         filePath = ""
     setHomeScreen()
-#rids screen of all widgets
+
 def clearScreen():
     for widget in startScreen.winfo_children():
         if isinstance(widget, (Tk, Toplevel)):
             widget.destroy()
         else:
             widget.pack_forget()
-    titleText.pack()
-#assings scrollbar to the businessFrame
+    titleText.pack(fill="x")
+
 def on_frame_configure(event):
     businessViewer.configure(scrollregion=businessViewer.bbox("all"))
-#shows businesses- either all or those user wants to view
+
+# ============================================================
+# ENHANCED — business card rendering
+# ============================================================
+def starsStr(rating, count):
+    filled = round(rating)
+    return "★" * filled + "☆" * (5 - filled)
+
+def _setBg(widget, color):
+    try:
+        if isinstance(widget, Button):
+            return
+        wbg = str(widget.cget("bg"))
+        if wbg in (CARD_BG, CARD_HOVER):
+            widget.config(bg=color)
+        for child in widget.winfo_children():
+            _setBg(child, color)
+    except:
+        pass
+
 def showBusinesses(df=None):
-    imageRefs = []
     for widget in businessFrame.winfo_children():
         widget.destroy()
     if df is None:
         df = businessDatabase
+    if df.empty:
+        Label(businessFrame, text="No businesses found.",
+              font=FONT_H2, fg=TEXT_LT, bg=BG, pady=60).pack()
+        return
     for i, row in df.iterrows():
-        businessCard = Frame(businessFrame, bd =1, relief ="solid")
-        businessCard.pack(padx=10,pady=5, fill = "x")
+        cardOuter = Frame(businessFrame, bg=BORDER, bd=0)
+        cardOuter.pack(padx=16, pady=6, fill="x")
+        card = Frame(cardOuter, bg=CARD_BG, bd=0)
+        card.pack(padx=1, pady=1, fill="x")
+
+        # Image
+        imgFrame = Frame(card, bg=CARD_BG, width=92, height=92)
+        imgFrame.pack(side="left", padx=12, pady=12)
+        imgFrame.pack_propagate(False)
         try:
-            thumbnail = Image.open(row['Image'])
-            thumbnail = thumbnail.resize((80,80))
-            thumbnailphoto = ImageTk.PhotoImage(thumbnail)
-            thumbnailLabel = Label(businessCard, image = thumbnailphoto)
-            thumbnailLabel.image = thumbnailphoto
-            thumbnailLabel.pack(side="left", padx =5, pady=5)
-            imageRefs.append(thumbnailphoto)
+            thumb = Image.open(row['Image'])
+            thumb = thumb.resize((88, 88), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(thumb)
+            lbl = Label(imgFrame, image=photo, bg=CARD_BG)
+            lbl.image = photo
+            lbl.pack(expand=True)
         except:
-            Label(businessCard, text = "[No Image]", width =10, height =5 ).pack(side="left", padx=5, pady=5)
-        businessLabel = Label(businessCard, text = row['Name'])
-        businessLabel.pack(side="left", padx=10,pady=5)
-        businessButton = Button(businessCard, text = "View Details", command = lambda r =row:showDetails(r))
-        businessButton.pack(side="right", padx=10)
-        if(row['Number of Reviews']) > 0:
-            reviewLabel = Label(businessCard, text = str(round(row['Rating'], 1)) + " Stars")
-            reviewLabel.pack(side = "left", padx=10)
-        reviewButton = Button(businessCard, text = "Add Review", command = lambda r =row:addReviewScreen(r))
-        reviewButton.pack(side="right", padx=10)
-        def on_enter(e, w=businessCard):
-            w.config(bg="lightblue")
-        def on_leave(e, w = businessCard):
-            w.config(bg="SystemButtonFace")
-        businessCard.bind("<Enter>", on_enter)
-        businessCard.bind("<Leave>", on_leave)
-#on event user clicks on more details, user can get more info on business
+            Label(imgFrame, text="🏢", font=("Segoe UI", 30),
+                  bg="#e2e8f0", fg=TEXT_MD).pack(expand=True, fill="both")
+
+        # Info
+        infoF = Frame(card, bg=CARD_BG)
+        infoF.pack(side="left", fill="both", expand=True, padx=(0, 12), pady=12)
+        Label(infoF, text=row['Name'], font=FONT_CARD, fg=TEXT_DK, bg=CARD_BG, anchor="w").pack(fill="x")
+        Label(infoF, text=f"  {row['Category']}  ", font=FONT_SMALL,
+              fg=WHITE, bg=PRIMARY, padx=4, pady=2).pack(anchor="w", pady=(4, 2))
+        Label(infoF, text=row['Location'], font=FONT_SMALL,
+              fg=TEXT_MD, bg=CARD_BG, anchor="w").pack(fill="x")
+        if row['Number of Reviews'] > 0:
+            s = starsStr(row['Rating'], row['Number of Reviews'])
+            Label(infoF, text=f"{s}  {round(row['Rating'],1)}/5  ({int(row['Number of Reviews'])} reviews)",
+                  font=("Segoe UI", 10), fg=STAR_GOLD, bg=CARD_BG, anchor="w").pack(fill="x", pady=(4, 0))
+        else:
+            Label(infoF, text="No reviews yet", font=FONT_SMALL,
+                  fg=TEXT_LT, bg=CARD_BG, anchor="w").pack(fill="x", pady=(4, 0))
+
+        # Buttons
+        btnF = Frame(card, bg=CARD_BG)
+        btnF.pack(side="right", padx=16, pady=12)
+        makeButton(btnF, "View Details", lambda r=row: showDetails(r), style="primary").pack(pady=(0, 6))
+        makeButton(btnF, "Add Review", lambda r=row: addReviewScreen(r), style="ghost").pack()
+
+        # Hover
+        def on_enter(e, c=card): c.config(bg=CARD_HOVER); _setBg(c, CARD_HOVER)
+        def on_leave(e, c=card): c.config(bg=CARD_BG);    _setBg(c, CARD_BG)
+        card.bind("<Enter>", on_enter)
+        card.bind("<Leave>", on_leave)
+
+# ============================================================
+# ENHANCED — detail window
+# ============================================================
 def showDetails(business):
-    detailWindow = Toplevel(startScreen)
-    detailWindow.title(business['Name'])
-    Label(detailWindow, text= "Name: "+ business['Name']).pack(padx=10,pady=5)
-    Label(detailWindow, text = "Location: "+business['Location']).pack(padx=10,pady=5)
-    Label(detailWindow, text = "Category: " + business['Category']).pack(padx=10,pady=5)
-    Label(detailWindow, text = "Description: " + business['Description']).pack(padx=10,pady=5)
-    businessImg = Image.open((business['Image']))
-    maxThumbnailWidth, maxThumbnailHeight =400,400
-    businessImg.thumbnail((maxThumbnailWidth, maxThumbnailHeight))   
-    businessPhoto = ImageTk.PhotoImage(businessImg)  
-    businessImageLabel = Label(detailWindow, image = businessPhoto)  
-    businessImageLabel.image = businessPhoto
-    businessImageLabel.pack(padx=10, pady=10)
-    reviewsText = "Reviews:\n"
-    if isinstance(business['Reviews'], list):
-        for review in business['Reviews']:
-            reviewsText += review +"\n"
-    reviewLabel = Label(detailWindow, text = reviewsText)
-    reviewLabel.pack()
-#sets default screen of business viewer
+    win = Toplevel(startScreen)
+    win.title(business['Name'])
+    win.configure(bg=BG)
+    win.resizable(False, False)
+    win.grab_set()
+
+    Frame(win, bg=HEADER_BG, height=2).pack(fill="x")
+    headerF = Frame(win, bg=HEADER_BG)
+    headerF.pack(fill="x")
+    Label(headerF, text=business['Name'], font=FONT_H1,
+          fg=WHITE, bg=HEADER_BG, pady=14, padx=20).pack(anchor="w")
+
+    bodyF = Frame(win, bg=BG, padx=28, pady=18)
+    bodyF.pack(fill="both", expand=True)
+
+    try:
+        img = Image.open(business['Image'])
+        img.thumbnail((380, 260), Image.LANCZOS)
+        photo = ImageTk.PhotoImage(img)
+        lbl = Label(bodyF, image=photo, bg=BG)
+        lbl.image = photo
+        lbl.pack(pady=(0, 14))
+    except:
+        Label(bodyF, text="[No Image]", font=FONT_BODY, fg=TEXT_MD, bg=BG).pack(pady=(0, 14))
+
+    for label, value in [("Location", business['Location']),
+                         ("Category", business['Category']),
+                         ("Description", business['Description'])]:
+        rowF = Frame(bodyF, bg=BG)
+        rowF.pack(fill="x", pady=3)
+        Label(rowF, text=f"{label}:", font=("Segoe UI", 11, "bold"),
+              fg=TEXT_MD, bg=BG, width=13, anchor="w").pack(side="left")
+        Label(rowF, text=value, font=FONT_BODY, fg=TEXT_DK, bg=BG,
+              anchor="w", wraplength=340).pack(side="left")
+
+    if business['Number of Reviews'] > 0:
+        s = starsStr(business['Rating'], business['Number of Reviews'])
+        Label(bodyF, text=f"{s}  {round(business['Rating'],1)} / 5.0",
+              font=("Segoe UI", 15), fg=STAR_GOLD, bg=BG).pack(pady=(10, 4))
+
+    reviews = business['Reviews'] if isinstance(business['Reviews'], list) else []
+    if reviews:
+        Label(bodyF, text="Customer Reviews", font=FONT_H2, fg=TEXT_DK, bg=BG).pack(anchor="w", pady=(12, 6))
+        revOuter = Frame(bodyF, bg=BG)
+        revOuter.pack(fill="x")
+        revCanvas = Canvas(revOuter, bg=BG, height=130, highlightthickness=0)
+        revScroll = Scrollbar(revOuter, orient="vertical", command=revCanvas.yview)
+        revCanvas.configure(yscrollcommand=revScroll.set)
+        revCanvas.pack(side="left", fill="both", expand=True)
+        revScroll.pack(side="right", fill="y")
+        revFrame = Frame(revCanvas, bg=BG)
+        revCanvas.create_window((0, 0), window=revFrame, anchor="nw")
+        for rev in reviews:
+            revCard = Frame(revFrame, bg=CARD_BG, highlightthickness=1, highlightbackground=BORDER)
+            revCard.pack(fill="x", pady=3, padx=2)
+            Label(revCard, text=rev, font=FONT_SMALL, fg=TEXT_DK, bg=CARD_BG,
+                  anchor="w", wraplength=360, justify="left", padx=10, pady=6).pack(fill="x")
+        revFrame.update_idletasks()
+        revCanvas.configure(scrollregion=revCanvas.bbox("all"))
+
+    makeButton(bodyF, "Close", win.destroy, style="ghost").pack(pady=(16, 0))
+
+# ============================================================
+# HOME SCREEN
+# ============================================================
 def setHomeScreen():
     clearScreen()
     showMenu()
-    titleText.pack(side="top", pady=10)
-    searchFrame.pack(side = "top",fill="x", padx=10, pady=5)
-    searchLabel.pack(side="left", padx=(0,5))
-    searchEntry.pack(side="left", fill ="x", expand = True, padx=(0,5))
-    chooseCategory.pack(side = "left", padx=(5,5))
-    ratingOrderInput.pack(side="left", padx=(5,5))
-    goButton.pack(side="left")
-    businessViewer.pack(side = "left", fill ="both", expand = True)
-    viewerScrollbar.pack(side = "right", fill = "y")
+    titleText.pack(fill="x")
+
+    searchBanner = Frame(startScreen, bg=HEADER_BG, padx=16, pady=10)
+    searchBanner.pack(fill="x")
+    searchFrame.pack(in_=searchBanner, fill="x")
+    searchLabel.pack(in_=searchFrame, side="left", padx=(0, 6))
+    searchEntry.pack(in_=searchFrame, side="left", fill="x", expand=True, padx=(0, 8))
+    chooseCategory.pack(in_=searchFrame, side="left", padx=(0, 6))
+    ratingOrderInput.pack(in_=searchFrame, side="left", padx=(0, 6))
+    goButton.pack(in_=searchFrame, side="left")
+
+    businessViewer.pack(side="left", fill="both", expand=True)
+    viewerScrollbar.pack(side="right", fill="y")
     showBusinesses()
-#when user wants to add review, opens up review screen
+
+# ============================================================
+# REVIEW SCREEN
+# ============================================================
 def addReviewScreen(business):
-    global starButtons
-    global rating
+    global starButtons, rating
     rating.set(0)
     starButtons = []
-    reviewWindow = Toplevel(startScreen)
-    reviewWindow.title(business['Name'])
-    Label(reviewWindow, text = "Leave a review and share your experience at " + business['Name'] + "!").pack()
-    starFrame = Frame(reviewWindow)
-    starFrame.pack(pady=10)
+
+    win = Toplevel(startScreen)
+    win.title("Review — " + business['Name'])
+    win.configure(bg=BG)
+    win.resizable(False, False)
+    win.grab_set()
+
+    headerF = Frame(win, bg=HEADER_BG)
+    headerF.pack(fill="x")
+    Label(headerF, text=f"Review: {business['Name']}", font=FONT_H1,
+          fg=WHITE, bg=HEADER_BG, pady=14, padx=20).pack(anchor="w")
+
+    bodyF = Frame(win, bg=BG, padx=28, pady=20)
+    bodyF.pack(fill="both", expand=True)
+
+    Label(bodyF, text="Rate your experience", font=FONT_H2, fg=TEXT_DK, bg=BG).pack(pady=(0, 8))
+
+    starFrame = Frame(bodyF, bg=BG)
+    starFrame.pack(pady=(0, 14))
     for i in range(5):
-        star = Button(starFrame, text = "☆", command = lambda i=i:setRating(i+1))
-        star.pack(side="left")
+        star = Button(starFrame, text="☆", font=("Segoe UI", 28),
+                      fg=STAR_GOLD, bg=BG, activebackground=BG,
+                      activeforeground=STAR_GOLD, relief="flat",
+                      cursor="hand2", bd=0, command=lambda i=i: setRating(i+1))
+        star.pack(side="left", padx=4)
         starButtons.append(star)
-    reviewDescription = Text(reviewWindow, height =5, width = 40, wrap="word")
-    reviewDescription.pack(fill="x")
-    addTextPlaceholder(reviewDescription, "Describe Experience Here")
-    submitReviewButton= Button(reviewWindow, text = "Submit Review", command = lambda:[updateReview(business, reviewDescription.get("1.0", "end-1c")), reviewWindow.destroy()] )
-    submitReviewButton.pack(pady=10)
-#when user clicks on stars to update rating, updates the value(1-5)
+
+    Label(bodyF, text="Tell others about your experience:",
+          font=FONT_BODY, fg=TEXT_MD, bg=BG).pack(anchor="w", pady=(0, 6))
+
+    reviewDescription = Text(win, height=6, width=46, wrap="word",
+                             font=FONT_BODY, fg=TEXT_DK, bg=INPUT_BG,
+                             insertbackground=TEXT_DK, relief="flat",
+                             highlightthickness=1, highlightbackground=INPUT_BD,
+                             highlightcolor=PRIMARY, bd=0, padx=8, pady=6)
+    reviewDescription.pack(in_=bodyF, fill="x")
+    addTextPlaceholder(reviewDescription, "Describe your experience here…")
+
+    makeButton(bodyF, "Submit Review",
+               lambda: [updateReview(business, reviewDescription.get("1.0", "end-1c")), win.destroy()],
+               style="primary").pack(pady=(16, 0))
+
 def setRating(value):
     global rating
     rating.set(value)
     updateStars()
-#when user clicks on stars to update rating, updates status of stars
+
 def updateStars():
-    global starButtons
-    global rating
+    global starButtons, rating
     for i in range(5):
-        if i<rating.get():
-            starButtons[i].config(text = "★")
-        else:
-            starButtons[i].config(text = "☆")
-#when user submits review, adds review to business and user
+        starButtons[i].config(text="★" if i < rating.get() else "☆")
+
 def updateReview(row, review):
-    global rating
-    global accountInUse
+    global rating, accountInUse
     review = review.strip()
-    if review == "" or review == "Describe Experience Here":
+    if review in ("", "Describe your experience here…"):
         return
     if not isinstance(accountDatabase.loc[accountInUse, 'Reviews'], list):
         accountDatabase.loc[accountInUse, 'Reviews'] = []
     index = businessDatabase.index[businessDatabase['Name']==row['Name']].tolist()[0]
-    accountDatabase.loc[accountInUse, 'Reviews'].append({"rating": rating.get(), "review":review})
-    accountDatabase.loc[accountInUse, "Number of Reviews"]+= 1
-    businessDatabase.loc[index, 'Number of Reviews'] +=1
+    accountDatabase.loc[accountInUse, 'Reviews'].append({"rating": rating.get(), "review": review})
+    accountDatabase.loc[accountInUse, "Number of Reviews"] += 1
+    businessDatabase.loc[index, 'Number of Reviews'] += 1
     businessDatabase.loc[index, 'Total Rating Count'] += rating.get()
     if not isinstance(businessDatabase.loc[index, "Reviews"], list):
         businessDatabase.loc[index, "Reviews"] = []
-    businessDatabase.loc[index, "Rating"] = businessDatabase.loc[index, 'Total Rating Count']/businessDatabase.loc[index, 'Number of Reviews']
+    businessDatabase.loc[index, "Rating"] = (businessDatabase.loc[index, 'Total Rating Count'] /
+                                              businessDatabase.loc[index, 'Number of Reviews'])
     businessDatabase.loc[index, "Reviews"].append(f"{rating.get()}★ - {review.strip()}")
     setHomeScreen()
-#add placeholders for text inputs
+
 def addTextPlaceholder(text_widget, placeholder):
     text_widget.insert("1.0", placeholder)
-    text_widget.config(fg = "grey")
+    text_widget.config(fg="grey")
     def on_focus_in(event):
         if text_widget.get("1.0", "end-1c") == placeholder:
             text_widget.delete("1.0", END)
-            text_widget.config(fg = "black")
+            text_widget.config(fg=TEXT_DK)
     def on_focus_out(event):
         if text_widget.get("1.0", "end-1c") == "":
             text_widget.insert("1.0", placeholder)
-            text_widget.config(fg = "grey")
+            text_widget.config(fg="grey")
     text_widget.bind("<FocusIn>", on_focus_in)
     text_widget.bind("<FocusOut>", on_focus_out)
-#when user clicks go, updates the business Viewer to only include wanted values
+
 def sortAndSearch():
     query = searchVar.get().lower()
     category = chosenCategory.get()
     rating_sort = ratingOrder.get()
     filtered = businessDatabase.copy()
-    if query and query!="":
-        filtered = filtered[filtered.apply(lambda row: query in row['Name'].lower() or query in row['Description'].lower(), axis=1)]
-    if category != "t by Category":
-        filtered = filtered[filtered['Category']==category]
+    if query:
+        filtered = filtered[filtered.apply(
+            lambda row: query in row['Name'].lower() or query in row['Description'].lower(), axis=1)]
+    if category != "Sort by Category":
+        filtered = filtered[filtered['Category'] == category]
     if rating_sort == "Highest to Lowest Rating":
-        filtered = filtered.sort_values(by = "Rating", ascending = False)
+        filtered = filtered.sort_values(by="Rating", ascending=False)
     elif rating_sort == "Lowest to Highest Rating":
-        filtered = filtered.sort_values(by = "Rating", ascending = True)
+        filtered = filtered.sort_values(by="Rating", ascending=True)
     showBusinesses(filtered)
-#updates CSVs which contain account and business information
-def saveData(): 
-    accountDatabase.to_csv("accounts.csv", index=False)
-    businessDatabase.to_csv("businesses.csv", index = False)
 
-#CREATION OF WIDGETS/UI FEATURES
-startScreen = Tk() #main screen
-accountInUse = -1 #account currently logged in
-menuBar = Menu(startScreen) #taskbar
-startScreen.title("CityPulse") #title of window
-startScreen.state('zoomed') #fullscreen
-titleText = Label(startScreen, text = 'CityPulse') #titletext
-titleText.pack()
-filePath = "" #image file path
-startText = Label(startScreen, text = '') #login screen/create new account screen text
-#checks to ensure accounts.csv is proper format, and assign to pandas df
+def saveData():
+    accountDatabase.to_csv("accounts.csv", index=False)
+    businessDatabase.to_csv("businesses.csv", index=False)
+
+# ============================================================
+# MAIN WINDOW SETUP
+# ============================================================
+startScreen = Tk()
+startScreen.title("CityPulse")
+startScreen.state('zoomed')
+startScreen.configure(bg=BG)
+
+applyStyles()
+
+accountInUse = -1
+menuBar = Menu(startScreen, bg=HEADER_BG, fg=WHITE,
+               activebackground=PRIMARY, activeforeground=WHITE,
+               relief="flat", font=FONT_BODY)
+filePath = ""
+
+# ── Data ────────────────────────────────────────────────────
 if os.path.exists("accounts.csv"):
     accountDatabase = pd.read_csv("accounts.csv")
-    accountDatabase['Businesses'] = accountDatabase['Businesses'].apply(lambda x: ast.literal_eval(x) if pd.notna(x) else[])
-    accountDatabase['Reviews'] = accountDatabase['Reviews'].apply(lambda x: ast.literal_eval(x) if pd.notna(x) else [])
+    accountDatabase['Businesses'] = accountDatabase['Businesses'].apply(
+        lambda x: ast.literal_eval(x) if pd.notna(x) else [])
+    accountDatabase['Reviews'] = accountDatabase['Reviews'].apply(
+        lambda x: ast.literal_eval(x) if pd.notna(x) else [])
 else:
-    accountDatabase = pd.DataFrame(columns= ['Username', 'Password', 'Email', 'Number of Reviews', 'Certificates', 'Reviews', 'Type', 'Businesses'])
-#checks to ensure businesses.csv is proper format, and assign to pandas df
+    accountDatabase = pd.DataFrame(columns=[
+        'Username', 'Password', 'Email', 'Number of Reviews',
+        'Certificates', 'Reviews', 'Type', 'Businesses'])
+
 if os.path.exists("businesses.csv"):
     businessDatabase = pd.read_csv("businesses.csv")
-    businessDatabase['Reviews'] = businessDatabase['Reviews'].apply(lambda x: ast.literal_eval(x) if pd.notna(x) else[])
+    businessDatabase['Reviews'] = businessDatabase['Reviews'].apply(
+        lambda x: ast.literal_eval(x) if pd.notna(x) else [])
 else:
-    businessDatabase = pd.DataFrame(columns = ['Name', 'Location', 'Image', 'Description', 'Category', 'Rating', 'Number of Reviews', 'Total Rating Count', 'Reviews'])
-createNewAccountButton = Button(startScreen, text = 'Create New Account', command = newAccountScreen)
-loginButton = Button(startScreen, text = 'Login Into Existing Account', command = loginScreen)
-createNewAccountButton.pack()
-loginButton.pack()
-usernameInput = Entry(startScreen)
+    businessDatabase = pd.DataFrame(columns=[
+        'Name', 'Location', 'Image', 'Description', 'Category',
+        'Rating', 'Number of Reviews', 'Total Rating Count', 'Reviews'])
+
+# ── Persistent header ───────────────────────────────────────
+titleText = Frame(startScreen, bg=HEADER_BG, height=64)
+titleText.pack(fill="x")
+titleText.pack_propagate(False)
+Label(titleText, text="🏙  CityPulse", font=FONT_TITLE,
+      fg=WHITE, bg=HEADER_BG, padx=24).pack(side="left", fill="y")
+
+# ── Auth card wrapper ────────────────────────────────────────
+authWrapper = Frame(startScreen, bg=BG)
+authWrapper.pack(expand=True)
+
+authCard = Frame(authWrapper, bg=CARD_BG, padx=44, pady=36,
+                 highlightthickness=1, highlightbackground=BORDER)
+authCard.pack(padx=20, pady=50)
+
+Label(authCard, text="Welcome to CityPulse", font=FONT_H1, fg=TEXT_DK, bg=CARD_BG).pack(pady=(0, 4))
+Label(authCard, text="Discover and review local businesses",
+      font=FONT_SMALL, fg=TEXT_MD, bg=CARD_BG).pack(pady=(0, 22))
+
+usernameInput = makeEntry(authCard, width=32)
 addPlaceholder(usernameInput, "Enter Username")
-passwordInput = Entry(startScreen)
+
+passwordInput = makeEntry(authCard, width=32)
 addPlaceholder(passwordInput, "Enter Password")
-emailInput = Entry(startScreen)
+
+emailInput = makeEntry(authCard, width=32)
 addPlaceholder(emailInput, "Enter Email")
-loginCompletedButton = Button(startScreen, text = 'Login', command = lambda:login(usernameInput.get(), passwordInput.get()))
-createAccountCompletedButton = Button(startScreen, text = 'Create New Account', command = lambda:accountType())
-customerButton = Button(startScreen, text = "Customer", command= lambda:createAccount(usernameInput.get(), passwordInput.get(), emailInput.get(), "Customer"))
-ownerButton = Button(startScreen, text = "Owner", command = lambda:createAccount(usernameInput.get(), passwordInput.get(), emailInput.get(), "Owner"))
-businessNameInput = Entry(startScreen)
+
+startText = Label(authCard, text="", font=FONT_BODY, fg=ERROR_RED, bg=CARD_BG)
+
+createNewAccountButton = makeButton(authCard, "Create New Account", newAccountScreen, style="ghost", width=26)
+loginButton            = makeButton(authCard, "Login to Existing Account", loginScreen, style="primary", width=26)
+loginCompletedButton         = makeButton(authCard, "Login", lambda: login(usernameInput.get(), passwordInput.get()), style="primary", width=26)
+createAccountCompletedButton = makeButton(authCard, "Create Account", lambda: accountType(), style="primary", width=26)
+customerButton = makeButton(authCard, "I'm a Customer",      lambda: createAccount(usernameInput.get(), passwordInput.get(), emailInput.get(), "Customer"), style="primary", width=26)
+ownerButton    = makeButton(authCard, "I'm a Business Owner",lambda: createAccount(usernameInput.get(), passwordInput.get(), emailInput.get(), "Owner"),    style="ghost",   width=26)
+
+createNewAccountButton.pack(pady=(0, 8))
+loginButton.pack()
+
+# ── Business form widgets (hidden until needed) ──────────────
+businessNameInput = makeEntry(startScreen, width=36)
 addPlaceholder(businessNameInput, "Business Name")
-businessLocationInput = Entry(startScreen)
+businessLocationInput = makeEntry(startScreen, width=36)
 addPlaceholder(businessLocationInput, "Business Location")
 selectedCategory = StringVar()
-businessCategoryInput = ttk.Combobox(startScreen, values = ['Food', 'Service', 'Retail', 'Health & Wellness', 'Education', 'Automotive', 'Travel & Hospitality', 'Entertainment', 'Home Services'], textvariable = selectedCategory, state="readonly")
+businessCategoryInput = ttk.Combobox(startScreen,
+    values=['Food','Service','Retail','Health & Wellness','Education',
+            'Automotive','Travel & Hospitality','Entertainment','Home Services'],
+    textvariable=selectedCategory, state="readonly", width=34, font=FONT_BODY)
 businessCategoryInput.set("Select Category")
-businessDescriptionInput = Entry(startScreen)
+businessDescriptionInput = makeEntry(startScreen, width=36)
 addPlaceholder(businessDescriptionInput, "Business Description")
-businessImageInput = Button(startScreen, text = "Upload Business Image", command = uploadFile)
-createBusinessButton = Button(startScreen, text = "Create Business", command = lambda:createBusiness(businessNameInput.get(), businessLocationInput.get(), businessDescriptionInput.get()))
-createBusinessText = Label(startScreen)
-createBusinessTitle = Label(startScreen,text = "Create your business!")
-editBusinessNameInput = Entry(startScreen)
+businessImageInput    = makeButton(startScreen, "Upload Business Image", uploadFile, style="ghost")
+createBusinessButton  = makeButton(startScreen, "Create Business", lambda: createBusiness(
+    businessNameInput.get(), businessLocationInput.get(), businessDescriptionInput.get()), style="primary")
+createBusinessText  = Label(startScreen, text="", font=FONT_BODY, fg=ERROR_RED, bg=BG)
+createBusinessTitle = Label(startScreen, text="Create Your Business", font=FONT_H1, fg=TEXT_DK, bg=BG)
+
+# ── Edit business widgets ────────────────────────────────────
+editBusinessNameInput = makeEntry(startScreen, width=36)
 addPlaceholder(editBusinessNameInput, "Business Name")
-editBusinessLocationInput = Entry(startScreen)
+editBusinessLocationInput = makeEntry(startScreen, width=36)
 addPlaceholder(editBusinessLocationInput, "Business Location")
 editSelectedCategory = StringVar()
-editBusinessCategoryInput = ttk.Combobox(startScreen, values = ['Food', 'Service', 'Retail', 'Health & Wellness', 'Education', 'Automotive', 'Travel & Hospitality', 'Entertainment', 'Home Services'], textvariable = editSelectedCategory, state="readonly")
+editBusinessCategoryInput = ttk.Combobox(startScreen,
+    values=['Food','Service','Retail','Health & Wellness','Education',
+            'Automotive','Travel & Hospitality','Entertainment','Home Services'],
+    textvariable=editSelectedCategory, state="readonly", width=34, font=FONT_BODY)
 editBusinessCategoryInput.set("Select Category")
-editBusinessDescriptionInput = Entry(startScreen)
+editBusinessDescriptionInput = makeEntry(startScreen, width=36)
 addPlaceholder(editBusinessDescriptionInput, "Business Description")
-editBusinessImageInput = Button(startScreen, text = "Upload Business Image", command = uploadFile)
-editBusinessButton = Button(startScreen, text = "Finalize Changes", command = lambda:finalizeEdits())
-editBusinessText = Label(startScreen)
-homeButton = Button(startScreen, command = lambda:clearScreen())
-currentBusinessIndex = -1
-businessViewer = Canvas(startScreen)
-viewerScrollbar = Scrollbar(startScreen, orient = "vertical", command = businessViewer.yview)
+editBusinessImageInput = makeButton(startScreen, "Upload New Image", uploadFile, style="ghost")
+editBusinessButton     = makeButton(startScreen, "Save Changes", lambda: finalizeEdits(), style="success")
+editBusinessText       = Label(startScreen, text="", font=FONT_BODY, fg=ERROR_RED, bg=BG)
+editBusinessTitle      = Label(startScreen, text="Edit Business", font=FONT_H1, fg=TEXT_DK, bg=BG)
+homeButton             = Button(startScreen, command=lambda: clearScreen(), bg=BG, bd=0)
+currentBusinessIndex   = -1
+
+# ── Business canvas + scrollbar ─────────────────────────────
+businessViewer  = Canvas(startScreen, bg=BG, highlightthickness=0)
+viewerScrollbar = Scrollbar(startScreen, orient="vertical", command=businessViewer.yview)
 businessViewer.configure(yscrollcommand=viewerScrollbar.set)
-businessFrame = Frame(businessViewer)
-businessViewer.create_window((0,0), window = businessFrame, anchor = "nw")
+businessFrame   = Frame(businessViewer, bg=BG)
+businessViewer.create_window((0, 0), window=businessFrame, anchor="nw")
 businessFrame.bind("<Configure>", on_frame_configure)
-rating = IntVar(value = 0)
+businessViewer.bind("<MouseWheel>", lambda e: businessViewer.yview_scroll(int(-1*(e.delta/120)), "units"))
+
+# ── Search bar ───────────────────────────────────────────────
+rating     = IntVar(value=0)
 starButtons = []
-searchFrame = Frame(startScreen)
-searchLabel = Label(searchFrame, text = "Search:")
-searchVar = StringVar()
-searchEntry = Entry(searchFrame, textvariable = searchVar)
+
+searchFrame = Frame(startScreen, bg=HEADER_BG)
+searchLabel = Label(searchFrame, text="Search:", font=FONT_BTN, fg=WHITE, bg=HEADER_BG)
+searchVar   = StringVar()
+searchEntry = Entry(searchFrame, textvariable=searchVar, font=FONT_BODY,
+                    bg=WHITE, fg=TEXT_DK, relief="flat",
+                    highlightthickness=1, highlightbackground=WHITE,
+                    highlightcolor=PRIMARY, bd=0, width=26, insertbackground=TEXT_DK)
 searchEntry.bind("<Return>", lambda e: sortAndSearch())
+
 chosenCategory = StringVar()
-chooseCategory = ttk.Combobox(searchFrame, values = ['Food', 'Service', 'Retail', 'Health & Wellness', 'Education', 'Automotive', 'Travel & Hospitality', 'Entertainment', 'Home Services'], textvariable = chosenCategory, state = "readonly")
+chooseCategory = ttk.Combobox(searchFrame,
+    values=['Food','Service','Retail','Health & Wellness','Education',
+            'Automotive','Travel & Hospitality','Entertainment','Home Services'],
+    textvariable=chosenCategory, state="readonly", width=18, font=FONT_BODY)
 chooseCategory.set("Sort by Category")
+
 ratingOrder = StringVar()
-ratingOrderInput = ttk.Combobox(searchFrame, values = ['Highest to Lowest Rating', 'Lowest to Highest Rating'], textvariable= ratingOrder, state = 'readonly')
+ratingOrderInput = ttk.Combobox(searchFrame,
+    values=['Highest to Lowest Rating','Lowest to Highest Rating'],
+    textvariable=ratingOrder, state='readonly', width=22, font=FONT_BODY)
 ratingOrderInput.set("Sort by Rating")
-goButton = Button(searchFrame, text = "Sort and Search", command = lambda:sortAndSearch())
+
+goButton = makeButton(searchFrame, "Search", lambda: sortAndSearch(), style="primary")
+
+# ── Launch ───────────────────────────────────────────────────
 startScreen.mainloop()
