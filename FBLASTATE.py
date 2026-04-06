@@ -459,19 +459,16 @@ def showDetails(business):
 def setHomeScreen():
     clearScreen()
     showMenu()
-    titleText.pack(fill="x")
 
-    searchBanner = Frame(startScreen, bg=HEADER_BG, padx=16, pady=10)
-    searchBanner.pack(fill="x")
-    searchFrame.pack(in_=searchBanner, fill="x")
-    searchLabel.pack(in_=searchFrame, side="left", padx=(0, 6))
-    searchEntry.pack(in_=searchFrame, side="left", fill="x", expand=True, padx=(0, 8))
-    chooseCategory.pack(in_=searchFrame, side="left", padx=(0, 6))
-    ratingOrderInput.pack(in_=searchFrame, side="left", padx=(0, 6))
-    goButton.pack(in_=searchFrame, side="left")
+    searchFrame.pack(fill="x")
+    searchLabel.pack(side="left", padx=(16, 6), pady=10)
+    searchEntry.pack(side="left", fill="x", expand=True, padx=(0, 8), pady=10)
+    chooseCategory.pack(side="left", padx=(0, 6), pady=10)
+    ratingOrderInput.pack(side="left", padx=(0, 6), pady=10)
+    goButton.pack(side="left", padx=(0, 16), pady=10)
 
-    businessViewer.pack(side="left", fill="both", expand=True)
     viewerScrollbar.pack(side="right", fill="y")
+    businessViewer.pack(side="left", fill="both", expand=True)
     showBusinesses()
 
 # ============================================================
