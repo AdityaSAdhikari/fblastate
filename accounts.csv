@@ -1,15 +1,5 @@
 Username,Password,Email,Number of Reviews,Certificates,Reviews,Type,Businesses
-ss,ss,ss,0,[],[],Owner,[]
-gq,g,h,0,[],[],Owner,[]
-e,e,e ,0,[],[],Customer,[]
-aa,a,a,0,[],[],Owner,"[""Timmy's Tacos""]"
-vcv,d,ddd,0,[],[],Customer,[]
-aaaa,aa,aa,0,[],[],Owner,[]
-aaa,aaa,aaa,0,[],[],Owner,[]
-retgs,edfd,sdds,0,[],[],Owner,[]
-effdfd,sdsdfdsf,dfsdfs,0,[],[],Owner,[]
-efd,eerett,efdvb,0,[],[],Owner,[]
-ererfe,fefefsaf,afe,0,[],[],Customer,[]
-najun,dkfjdk,lapop,0,[],[],Owner,[]
-aditya,adhikari,aditya.sanket.adhikari@gmail.com,0,[],[],Owner,[]
 sanjay,sanjay,sb,1,[],"[{'rating': 5, 'review': 'pretty good'}]",Customer,[]
+adityaA,12345,adityaa,1,[],"[{'rating': 4, 'review': 'My kids really liked it'}]",Owner,"[""Paula's Produce""]"
+test,test,test,0,[],[],Owner,[]
+jaunmaxxing,jaun,jaun,0,[],[],Customer,[]

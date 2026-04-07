@@ -8,6 +8,9 @@ from PIL import Image, ImageTk
 import os
 import ast
 import re
+import io
+import urllib.request
+import ssl
 from tkinter import font as tkfont
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -49,6 +52,7 @@ FONT_TB    = ("Segoe UI", 10, "bold")
 # TTK STYLE
 # ============================================================
 def applyStyles():
+    """Applystyles."""
     style = ttk.Style()
     style.theme_use("clam")
     style.configure("TCombobox",
@@ -62,6 +66,7 @@ def applyStyles():
 # WIDGET HELPERS
 # ============================================================
 def makeButton(parent, text, command, style="primary", width=None):
+    """Makebutton."""
     if style == "primary":  bg, abg = PRIMARY, PRIMARY_DK
     elif style == "ghost":  bg, abg = "#eff6ff", "#dbeafe"
     elif style == "danger": bg, abg = ERROR_RED, "#b91c1c"
@@ -81,6 +86,7 @@ def makeButton(parent, text, command, style="primary", width=None):
     return btn
 
 def isDarkColor(hex_color):
+    """Isdarkcolor."""
     c = hex_color.lstrip("#")
     if len(c) != 6:
         return False
@@ -91,6 +97,7 @@ def isDarkColor(hex_color):
     return luminance < 150
 
 def makeEntry(parent, width=30, show=None):
+    """Makeentry."""
     kw = dict(font=FONT_BODY, bg=INPUT_BG, fg=TEXT_DK,
               insertbackground=TEXT_DK, relief="flat",
               highlightthickness=1, highlightbackground=INPUT_BD,
@@ -99,13 +106,16 @@ def makeEntry(parent, width=30, show=None):
     return Entry(parent, **kw)
 
 def addPlaceholder(entry, placeholderText):
+    """Addplaceholder."""
     entry.insert(0, placeholderText)
     entry.config(fg="grey")
     def on_focus_in(event):
+        """On focus in."""
         if entry.get() == placeholderText:
             entry.delete(0, END)
             entry.config(fg=TEXT_DK)
     def on_focus_out(event):
+        """On focus out."""
         if entry.get() == "":
             entry.insert(0, placeholderText)
             entry.config(fg="grey")
@@ -113,13 +123,16 @@ def addPlaceholder(entry, placeholderText):
     entry.bind("<FocusOut>", on_focus_out)
 
 def addTextPlaceholder(text_widget, placeholder):
+    """Addtextplaceholder."""
     text_widget.insert("1.0", placeholder)
     text_widget.config(fg="grey")
     def on_focus_in(event):
+        """On focus in."""
         if text_widget.get("1.0", "end-1c") == placeholder:
             text_widget.delete("1.0", END)
             text_widget.config(fg=TEXT_DK)
     def on_focus_out(event):
+        """On focus out."""
         if text_widget.get("1.0", "end-1c") == "":
             text_widget.insert("1.0", placeholder)
             text_widget.config(fg="grey")
@@ -130,6 +143,7 @@ def addTextPlaceholder(text_widget, placeholder):
 # clearScreen — hides all children of mainContent
 # ============================================================
 def clearScreen():
+    """Clearscreen."""
     for widget in mainContent.winfo_children():
         widget.pack_forget()
 
@@ -143,6 +157,70 @@ def flushLayout():
         businessViewer.configure(scrollregion=businessViewer.bbox("all"))
     except:
         pass
+
+def businessNameExists(name, exclude_index=None):
+    """Businessnameexists."""
+    target = str(name).strip().casefold()
+    if not target or "Name" not in businessDatabase.columns:
+        return False
+    for idx, existing in businessDatabase["Name"].items():
+        if exclude_index is not None and idx == exclude_index:
+            continue
+        if str(existing).strip().casefold() == target:
+            return True
+    return False
+
+activeScrollCanvas = None
+browsePage = 0
+browsePageSize = 24
+browseData = None
+thumbCache = {}
+imageFailLog = set()
+
+def setActiveScrollCanvas(canvas):
+    """Setactivescrollcanvas."""
+    global activeScrollCanvas
+    activeScrollCanvas = canvas
+
+def scrollCanvasFromEvent(canvas, event):
+    """Scrollcanvasfromevent."""
+    if canvas is None:
+        return
+    steps = 0
+    if hasattr(event, "num") and event.num == 4:
+        steps = -1
+    elif hasattr(event, "num") and event.num == 5:
+        steps = 1
+    elif hasattr(event, "delta") and event.delta:
+        if abs(event.delta) >= 120:
+            steps = -int(event.delta / 120)
+        else:
+            steps = -1 if event.delta > 0 else 1
+    if steps:
+        canvas.yview_scroll(steps, "units")
+
+def onGlobalMousewheel(event):
+    """Onglobalmousewheel."""
+    scrollCanvasFromEvent(activeScrollCanvas, event)
+
+def updateBrowsePager(total_results):
+    """Updatebrowsepager."""
+    if "pageInfoLabel" not in globals():
+        return
+    max_page = max(0, (total_results - 1) // browsePageSize) if total_results else 0
+    pageInfoLabel.config(text=f"Page {browsePage + 1}/{max_page + 1} ({total_results} results)")
+    prevPageButton.config(state=(NORMAL if browsePage > 0 else DISABLED))
+    nextPageButton.config(state=(NORMAL if browsePage < max_page else DISABLED))
+
+def changeBrowsePage(delta):
+    """Changebrowsepage."""
+    global browsePage, browseData
+    if browseData is None:
+        browseData = businessDatabase.reset_index(drop=True)
+    total = len(browseData)
+    max_page = max(0, (total - 1) // browsePageSize) if total else 0
+    browsePage = max(0, min(max_page, browsePage + delta))
+    showBusinesses()
 
 # ============================================================
 # TOOLBAR (shown when logged in as Owner)
@@ -219,6 +297,7 @@ def showCustomerToolbar():
     loBtn.pack(side="right")
 
 def hideToolbar():
+    """Hidetoolbar."""
     toolbar.pack_forget()
     for w in toolbar.winfo_children():
         w.destroy()
@@ -227,32 +306,55 @@ def hideToolbar():
 # AUTH SCREENS
 # ============================================================
 def showAuthScreen():
+    """Showauthscreen."""
     hideToolbar()
     clearScreen()
     authWrapper.pack(fill="both", expand=True)
     flushLayout()
 
-def loginScreen():
-    showAuthScreen()
-    usernameInput.pack(pady=(0, 8))
-    passwordInput.pack(pady=(0, 8))
+def resetAuthCardState():
+    """Resetauthcardstate."""
+    # Hide all auth-card action widgets so each flow can repack only what it needs.
+    usernameInput.pack_forget()
+    passwordInput.pack_forget()
     emailInput.pack_forget()
     startText.pack_forget()
-    loginCompletedButton.pack(pady=(4, 0))
+    createNewAccountButton.pack_forget()
+    loginButton.pack_forget()
+    loginCompletedButton.pack_forget()
     createAccountCompletedButton.pack_forget()
+    customerButton.pack_forget()
+    ownerButton.pack_forget()
+
+def showDefaultAuthScreen():
+    """Showdefaultauthscreen."""
+    showAuthScreen()
+    resetAuthCardState()
+    startText.config(text="")
+    createNewAccountButton.pack(pady=(0, 8))
+    loginButton.pack()
+
+def loginScreen():
+    """Loginscreen."""
+    showAuthScreen()
+    resetAuthCardState()
+    usernameInput.pack(pady=(0, 8))
+    passwordInput.pack(pady=(0, 8))
+    loginCompletedButton.pack(pady=(4, 0))
     startText.pack(pady=(8, 0))
 
 def newAccountScreen():
+    """Newaccountscreen."""
     showAuthScreen()
+    resetAuthCardState()
     usernameInput.pack(pady=(0, 8))
     emailInput.pack(pady=(0, 8))
     passwordInput.pack(pady=(0, 8))
-    startText.pack_forget()
     createAccountCompletedButton.pack(pady=(4, 0))
-    loginCompletedButton.pack_forget()
     startText.pack(pady=(8, 0))
 
 def login(username, password):
+    """Login."""
     index = accountDatabase.index[accountDatabase["Username"] == username].tolist()
     if not index:
         startText.config(text="Account Not Found", fg=ERROR_RED)
@@ -264,6 +366,7 @@ def login(username, password):
         setHomeScreen()
 
 def createAccount(username, password, email, type):
+    """Createaccount."""
     index = accountDatabase.index[accountDatabase["Username"] == username].tolist()
     if index:
         startText.config(text="Username is Unavailable", fg=ERROR_RED)
@@ -275,6 +378,7 @@ def createAccount(username, password, email, type):
         setHomeScreen()
 
 def accountType():
+    """Accounttype."""
     if usernameInput.get() in ("Enter Username", ""):
         startText.config(text="Enter a valid username", fg=ERROR_RED)
     elif emailInput.get() in ("Enter Email", ""):
@@ -283,25 +387,26 @@ def accountType():
         startText.config(text="Enter a valid password", fg=ERROR_RED)
     else:
         showAuthScreen()
+        resetAuthCardState()
         startText.config(text="I am a...", fg=TEXT_DK, font=FONT_H1, bg=CARD_BG)
         startText.pack(pady=(20, 12))
         customerButton.pack(pady=(0, 8))
         ownerButton.pack(pady=(0, 8))
 
 def logOut():
+    """Logout."""
     global accountInUse
     accountInUse = -1
     usernameInput.delete(0, END); usernameInput.insert(0, "Enter Username"); usernameInput.config(fg="grey")
     passwordInput.delete(0, END); passwordInput.insert(0, "Enter Password"); passwordInput.config(fg="grey")
     emailInput.delete(0, END);    emailInput.insert(0, "Enter Email");       emailInput.config(fg="grey")
-    showAuthScreen()
-    createNewAccountButton.pack(pady=(0, 8))
-    loginButton.pack()
+    showDefaultAuthScreen()
 
 # ============================================================
 # BUSINESS FORM — Add
 # ============================================================
 def uploadFile():
+    """Uploadfile."""
     global filePath
     filePath = filedialog.askopenfilename()
     if filePath:
@@ -311,6 +416,7 @@ def uploadFile():
         createBusinessText.config(text="No file selected", fg=ERROR_RED)
 
 def addBusinessScreen():
+    """Addbusinessscreen."""
     global businessNameInput, businessLocationInput, businessDescriptionInput
     global selectedCategory, businessCategoryInput
     global businessImageInput, createBusinessButton, createBusinessText
@@ -369,19 +475,20 @@ def addBusinessScreen():
     flushLayout()
 
 def createBusiness(name, location, description):
+    """Createbusiness."""
     global filePath, accountInUse
-    index = businessDatabase.index[businessDatabase["Name"] == name].tolist()
-    if index:                                         createBusinessText.config(text="Business Already Created", fg=ERROR_RED)
+    clean_name = str(name).strip()
+    if businessNameExists(clean_name):                createBusinessText.config(text="Business name already exists", fg=ERROR_RED)
     elif businessNameInput.get() == "Business Name":  createBusinessText.config(text="Enter valid name", fg=ERROR_RED)
     elif businessLocationInput.get() == "Business Location": createBusinessText.config(text="Enter valid location", fg=ERROR_RED)
     elif selectedCategory.get() == "Select Category": createBusinessText.config(text="Select a category", fg=ERROR_RED)
     elif businessDescriptionInput.get() == "Business Description": createBusinessText.config(text="Enter valid description", fg=ERROR_RED)
     elif not filePath:                                createBusinessText.config(text="Upload an image", fg=ERROR_RED)
     else:
-        businessDatabase.loc[len(businessDatabase)] = [name, location, filePath, description, selectedCategory.get(), 0.0, 0, 0, []]
+        businessDatabase.loc[len(businessDatabase)] = [clean_name, location, filePath, description, selectedCategory.get(), 0.0, 0, 0, []]
         if not isinstance(accountDatabase.at[accountInUse, "Businesses"], list):
             accountDatabase.at[accountInUse, "Businesses"] = []
-        accountDatabase.at[accountInUse, "Businesses"].append(name)
+        accountDatabase.at[accountInUse, "Businesses"].append(clean_name)
         saveData()
         filePath = ""
         setHomeScreen()
@@ -390,6 +497,7 @@ def createBusiness(name, location, description):
 # BUSINESS FORM — Edit
 # ============================================================
 def updateBusiness(updatedValue, type, index):
+    """Updatebusiness."""
     if type == "Name":        businessDatabase.loc[index, "Name"] = updatedValue
     if type == "Location":    businessDatabase.loc[index, "Location"] = updatedValue
     if type == "Description": businessDatabase.loc[index, "Description"] = updatedValue
@@ -397,6 +505,7 @@ def updateBusiness(updatedValue, type, index):
     if type == "Image":       businessDatabase.loc[index, "Image"] = updatedValue
 
 def editBusiness(item):
+    """Editbusiness."""
     global currentBusinessIndex
     global editBusinessNameInput, editBusinessLocationInput, editBusinessDescriptionInput
     global editSelectedCategory, editBusinessCategoryInput, editBusinessImageInput, editBusinessButton
@@ -445,12 +554,19 @@ def editBusiness(item):
     flushLayout()
 
 def finalizeEdits():
+    """Finalizeedits."""
     global currentBusinessIndex, filePath, reviewsDatabase
     index = currentBusinessIndex
     if index < 0 or index not in businessDatabase.index:
         return
     old_name = str(businessDatabase.loc[index, "Name"])
-    if editBusinessNameInput.get() not in ("", "Business Name"):         updateBusiness(editBusinessNameInput.get(), "Name", index)
+    new_name_input = str(editBusinessNameInput.get()).strip()
+    if new_name_input in ("", "Business Name"):
+        return
+    if businessNameExists(new_name_input, exclude_index=index):
+        messagebox.showerror("Duplicate Name", "A business with this name already exists.")
+        return
+    updateBusiness(new_name_input, "Name", index)
     if editBusinessLocationInput.get() not in ("", "Business Location"): updateBusiness(editBusinessLocationInput.get(), "Location", index)
     if editBusinessDescriptionInput.get() not in ("", "Business Description"): updateBusiness(editBusinessDescriptionInput.get(), "Description", index)
     if editSelectedCategory.get() != "Select Category":                  updateBusiness(editSelectedCategory.get(), "Category", index)
@@ -471,6 +587,7 @@ def finalizeEdits():
     setHomeScreen()
 
 def deleteBusiness(item):
+    """Deletebusiness."""
     global reviewsDatabase
     if not messagebox.askyesno("Delete Business", f"Delete '{item}'? This will remove its reviews too."):
         return
@@ -540,7 +657,8 @@ def viewBusinessReviews(biz_name):
                   anchor="w", wraplength=460, justify="left", padx=12, pady=10).pack(fill="x")
         inner.update_idletasks()
         canvas.configure(scrollregion=canvas.bbox("all"))
-        canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+        canvas.bind("<Enter>", lambda e, c=canvas: setActiveScrollCanvas(c))
+        canvas.bind("<Leave>", lambda e: setActiveScrollCanvas(None))
 
     makeButton(body, "Close", win.destroy, style="ghost").pack(pady=(14, 0))
 
@@ -566,11 +684,12 @@ def showOwnerBusinesses():
     canvas = Canvas(containerF, bg=BG, highlightthickness=0)
     sb = Scrollbar(containerF, orient="vertical", command=canvas.yview)
     canvas.configure(yscrollcommand=sb.set)
+    canvas.bind("<Enter>", lambda e, c=canvas: setActiveScrollCanvas(c))
+    canvas.bind("<Leave>", lambda e: setActiveScrollCanvas(None))
     sb.pack(side="right", fill="y")
     canvas.pack(side="left", fill="both", expand=True)
     listFrame = Frame(canvas, bg=BG)
     canvas.create_window((0, 0), window=listFrame, anchor="nw")
-    canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
     listFrame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
     if not businesses:
@@ -581,14 +700,23 @@ def showOwnerBusinesses():
         flushLayout()
         return
 
+    canvas.update_idletasks()
+    available_width = max(canvas.winfo_width(), 1)
+    min_card_width = 480
+    columns = max(1, available_width // min_card_width)
+    for c in range(columns):
+        listFrame.grid_columnconfigure(c, weight=1, uniform="owner_cards")
+    card_index = 0
     for biz_name in businesses:
         indexlist = businessDatabase.index[businessDatabase["Name"] == biz_name].tolist()
         if not indexlist:
             continue
         row = businessDatabase.loc[indexlist[0]]
+        grid_row = card_index // columns
+        grid_col = card_index % columns
 
         cardOuter = Frame(listFrame, bg=BORDER)
-        cardOuter.pack(padx=16, pady=6, fill="x")
+        cardOuter.grid(row=grid_row, column=grid_col, padx=10, pady=8, sticky="nsew")
         card = Frame(cardOuter, bg=CARD_BG)
         card.pack(padx=1, pady=1, fill="x")
 
@@ -597,12 +725,12 @@ def showOwnerBusinesses():
         imgF.pack(side="left", padx=12, pady=12)
         imgF.pack_propagate(False)
         try:
-            thumb = Image.open(row["Image"]).resize((88, 88), Image.LANCZOS)
-            photo = ImageTk.PhotoImage(thumb)
+            photo = loadCardPhoto(row["Image"])
             lbl = Label(imgF, image=photo, bg=CARD_BG)
             lbl.image = photo
             lbl.pack(expand=True)
-        except:
+        except Exception as e:
+            logImageFailure(row["Image"], e)
             Label(imgF, text="🏢", font=("Segoe UI", 28), bg="#e2e8f0", fg=TEXT_MD).pack(expand=True, fill="both")
 
         # Info
@@ -633,6 +761,7 @@ def showOwnerBusinesses():
         deleteBtn.bind("<Enter>", lambda e, b=deleteBtn: b.config(bg="#b91c1c", fg="red"))
         deleteBtn.bind("<Leave>", lambda e, b=deleteBtn: b.config(bg=ERROR_RED, fg="black"))
         deleteBtn.pack(fill="x")
+        card_index += 1
     canvas.update_idletasks()
     canvas.configure(scrollregion=canvas.bbox("all"))
     flushLayout()
@@ -642,16 +771,19 @@ def showOwnerBusinesses():
 # CANVAS SCROLL
 # ============================================================
 def on_frame_configure(event):
+    """On frame configure."""
     businessViewer.configure(scrollregion=businessViewer.bbox("all"))
 
 # ============================================================
 # BUSINESS CARDS
 # ============================================================
 def starsStr(r, count):
+    """Starsstr."""
     filled = round(r)
     return "★" * filled + "☆" * (5 - filled)
 
 def _setBg(widget, color):
+    """ setbg."""
     try:
         if isinstance(widget, Button): return
         if str(widget.cget("bg")) in (CARD_BG, CARD_HOVER):
@@ -660,18 +792,79 @@ def _setBg(widget, color):
             _setBg(child, color)
     except: pass
 
+def loadBusinessImage(source):
+    """Loadbusinessimage."""
+    if isinstance(source, str) and source.lower().startswith(("http://", "https://")):
+        req = urllib.request.Request(
+            source,
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36"}
+        )
+        try:
+            raw = urllib.request.urlopen(req, timeout=8).read()
+        except Exception as e:
+            # Some local Python installs on macOS fail cert verification for web images.
+            if "CERTIFICATE_VERIFY_FAILED" not in str(e):
+                raise
+            raw = urllib.request.urlopen(req, timeout=8, context=ssl._create_unverified_context()).read()
+        img = Image.open(io.BytesIO(raw))
+        img.load()
+        return img
+    return Image.open(source)
+
+def loadCardPhoto(source):
+    """Loadcardphoto."""
+    key = str(source)
+    if key in thumbCache:
+        return thumbCache[key]
+    thumb = loadBusinessImage(source).resize((88, 88), Image.LANCZOS)
+    photo = ImageTk.PhotoImage(thumb)
+    thumbCache[key] = photo
+    return photo
+
+def logImageFailure(source, err):
+    """Logimagefailure."""
+    key = str(source)
+    if key in imageFailLog:
+        return
+    imageFailLog.add(key)
+    print(f"[ImageLoadFail] {key} -> {type(err).__name__}: {err}")
+
 def showBusinesses(df=None):
+    """Showbusinesses."""
+    global browseData, browsePage
     for w in businessFrame.winfo_children():
         w.destroy()
-    if df is None:
-        df = businessDatabase
-    if df.empty:
+    if df is not None:
+        browseData = df.reset_index(drop=True)
+        browsePage = 0
+    elif browseData is None:
+        browseData = businessDatabase.reset_index(drop=True)
+
+    total_results = len(browseData)
+    if total_results == 0:
         Label(businessFrame, text="No businesses found.",
               font=FONT_H2, fg=TEXT_LT, bg=BG, pady=60).pack()
+        updateBrowsePager(0)
         return
-    for i, row in df.iterrows():
+
+    max_page = max(0, (total_results - 1) // browsePageSize)
+    if browsePage > max_page:
+        browsePage = max_page
+    start_idx = browsePage * browsePageSize
+    end_idx = min(start_idx + browsePageSize, total_results)
+    page_df = browseData.iloc[start_idx:end_idx]
+
+    businessViewer.update_idletasks()
+    available_width = max(businessViewer.winfo_width(), 1)
+    min_card_width = 460
+    columns = max(1, available_width // min_card_width)
+    for c in range(columns):
+        businessFrame.grid_columnconfigure(c, weight=1, uniform="browse_cards")
+    for i, (_, row) in enumerate(page_df.iterrows()):
+        grid_row = i // columns
+        grid_col = i % columns
         cardOuter = Frame(businessFrame, bg=BORDER)
-        cardOuter.pack(padx=16, pady=6, fill="x")
+        cardOuter.grid(row=grid_row, column=grid_col, padx=10, pady=8, sticky="nsew")
         card = Frame(cardOuter, bg=CARD_BG)
         card.pack(padx=1, pady=1, fill="x")
 
@@ -679,12 +872,12 @@ def showBusinesses(df=None):
         imgF.pack(side="left", padx=12, pady=12)
         imgF.pack_propagate(False)
         try:
-            thumb = Image.open(row["Image"]).resize((88, 88), Image.LANCZOS)
-            photo = ImageTk.PhotoImage(thumb)
+            photo = loadCardPhoto(row["Image"])
             lbl = Label(imgF, image=photo, bg=CARD_BG)
             lbl.image = photo
             lbl.pack(expand=True)
-        except:
+        except Exception as e:
+            logImageFailure(row["Image"], e)
             Label(imgF, text="🏢", font=("Segoe UI", 28), bg="#e2e8f0", fg=TEXT_MD).pack(expand=True, fill="both")
 
         infoF = Frame(card, bg=CARD_BG)
@@ -707,6 +900,7 @@ def showBusinesses(df=None):
 
         card.bind("<Enter>", lambda e, c=card: (_setBg(c, CARD_HOVER), c.config(bg=CARD_HOVER)))
         card.bind("<Leave>", lambda e, c=card: (_setBg(c, CARD_BG),    c.config(bg=CARD_BG)))
+    updateBrowsePager(total_results)
     businessFrame.update_idletasks()
     businessViewer.configure(scrollregion=businessViewer.bbox("all"))
     flushLayout()
@@ -715,6 +909,7 @@ def showBusinesses(df=None):
 # DETAIL WINDOW
 # ============================================================
 def showDetails(business):
+    """Showdetails."""
     win = Toplevel(startScreen)
     win.title(business["Name"])
     win.configure(bg=BG)
@@ -729,13 +924,14 @@ def showDetails(business):
     body.pack(fill="both", expand=True)
 
     try:
-        img = Image.open(business["Image"])
+        img = loadBusinessImage(business["Image"])
         img.thumbnail((380, 260), Image.LANCZOS)
         photo = ImageTk.PhotoImage(img)
         lbl = Label(body, image=photo, bg=BG)
         lbl.image = photo
         lbl.pack(pady=(0, 14))
-    except:
+    except Exception as e:
+        logImageFailure(business["Image"], e)
         Label(body, text="[No Image]", font=FONT_BODY, fg=TEXT_MD, bg=BG).pack(pady=(0, 14))
 
     for label, value in [("Location", business["Location"]),
@@ -777,6 +973,7 @@ def showDetails(business):
 # HOME SCREEN
 # ============================================================
 def setHomeScreen():
+    """Sethomescreen."""
     clearScreen()
     global accountInUse
     # Show appropriate toolbar
@@ -792,14 +989,18 @@ def setHomeScreen():
     chooseCategory.pack(side="left", padx=(0, 6), pady=10)
     ratingOrderInput.pack(side="left", padx=(0, 6), pady=10)
     goButton.pack(side="left", padx=(0, 16), pady=10)
+    prevPageButton.pack(side="left", padx=(0, 6), pady=10)
+    pageInfoLabel.pack(side="left", padx=(0, 6), pady=10)
+    nextPageButton.pack(side="left", padx=(0, 16), pady=10)
 
     # Scrollbar must be packed before canvas
     viewerScrollbar.pack(side="right", fill="y")
     businessViewer.pack(side="left", fill="both", expand=True)
-    showBusinesses()
+    showBusinesses(businessDatabase)
     flushLayout()
 
 def sortAndSearch():
+    """Sortandsearch."""
     query = searchVar.get().lower()
     category = chosenCategory.get()
     rating_sort = ratingOrder.get()
@@ -819,6 +1020,7 @@ def sortAndSearch():
 # REVIEW SCREEN
 # ============================================================
 def addReviewScreen(business):
+    """Addreviewscreen."""
     global starButtons, rating
     rating.set(0)
     starButtons = []
@@ -862,16 +1064,19 @@ def addReviewScreen(business):
                style="primary").pack(pady=(16, 0))
 
 def setRating(value):
+    """Setrating."""
     global rating
     rating.set(value)
     updateStars()
 
 def updateStars():
+    """Updatestars."""
     global starButtons, rating
     for i in range(5):
         starButtons[i].config(text="★" if i < rating.get() else "☆")
 
 def updateReview(row, review):
+    """Updatereview."""
     global rating, accountInUse, reviewsDatabase
     review = review.strip()
     if review in ("", "Describe your experience here…"):
@@ -888,6 +1093,7 @@ def updateReview(row, review):
     setHomeScreen()
 
 def saveData():
+    """Savedata."""
     accountDatabase.to_csv(ACCOUNTS_CSV, index=False)
     businessDatabase.to_csv(BUSINESSES_CSV, index=False)
     reviewsDatabase.to_csv(REVIEWS_CSV, index=False)
@@ -910,6 +1116,7 @@ starButtons      = []
 
 # ── Data ────────────────────────────────────────────────────
 def _parseList(x):
+    """ parselist."""
     if isinstance(x, list): return x
     if pd.isna(x): return []
     try:
@@ -956,6 +1163,7 @@ for col in ["Business Name", "Username", "Rating", "Review"]:
         reviewsDatabase[col] = "" if col in ("Business Name", "Username", "Review") else 0
 
 def refreshBusinessReviewsFromTable():
+    """Refreshbusinessreviewsfromtable."""
     # Rebuild business review stats/text from the dedicated reviews table.
     if "Reviews" not in businessDatabase.columns:
         businessDatabase["Reviews"] = [[] for _ in range(len(businessDatabase))]
@@ -1065,7 +1273,8 @@ businessViewer.configure(yscrollcommand=viewerScrollbar.set)
 businessFrame = Frame(businessViewer, bg=BG)
 businessViewer.create_window((0, 0), window=businessFrame, anchor="nw")
 businessFrame.bind("<Configure>", on_frame_configure)
-businessViewer.bind("<MouseWheel>", lambda e: businessViewer.yview_scroll(int(-1*(e.delta/120)), "units"))
+businessViewer.bind("<Enter>", lambda e, c=businessViewer: setActiveScrollCanvas(c))
+businessViewer.bind("<Leave>", lambda e: setActiveScrollCanvas(None))
 
 # ── Search bar (child of mainContent) ────────────────────────
 searchFrame = Frame(mainContent, bg=CARD_BG, highlightthickness=1, highlightbackground=BORDER)
@@ -1091,6 +1300,12 @@ ratingOrderInput = ttk.Combobox(searchFrame,
 ratingOrderInput.set("Sort by Rating")
 
 goButton = makeButton(searchFrame, "Search", sortAndSearch, style="primary")
+prevPageButton = makeButton(searchFrame, "← Prev", lambda: changeBrowsePage(-1), style="ghost")
+pageInfoLabel = Label(searchFrame, text="Page 1/1 (0 results)", font=FONT_SMALL, fg=TEXT_DK, bg=CARD_BG)
+nextPageButton = makeButton(searchFrame, "Next →", lambda: changeBrowsePage(1), style="ghost")
 
 # ── Launch ───────────────────────────────────────────────────
+startScreen.bind_all("<MouseWheel>", onGlobalMousewheel)
+startScreen.bind_all("<Button-4>", onGlobalMousewheel)
+startScreen.bind_all("<Button-5>", onGlobalMousewheel)
 startScreen.mainloop()
