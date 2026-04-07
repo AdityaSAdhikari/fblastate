@@ -1,3 +1,6 @@
-Business Name,Username,Rating,Review
-Timmy's Tacos,sanjay,5,pretty good
-Brightmind Academy,adityaA,4,My kids really liked it
+Business Name,Username,Rating,Review,Reply,Reported
+Timmy's Tacos,sanjay,5,pretty good,,False
+Brightmind Academy,adityaA,4,My kids really liked it,,False
+Ember Stage Events,testtest,3,Drinks dont taste very good... Food was amazing!,,False
+Brightmind Academy,testtest,4,gfgf,,True
+Flourish Wellness Studio,jaun,4,pretty good,,False

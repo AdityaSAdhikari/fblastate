@@ -1,28 +1,30 @@
-Name,Location,Image,Description,Category,Rating,Number of Reviews,Total Rating Count,Reviews
-Ember & Oak Bistro,1207 Oak Street,https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=640&q=80,Family restaurant serving regional dishes and catering,Food,0.0,0,0,[]
-Meridian Consulting Co.,1214 Maple Avenue,https://images.unsplash.com/photo-1497366216548-37526070297c?w=640&q=80,Professional services for scheduling billing and client support,Service,0.0,0,0,[]
-Copperleaf General Store,1221 Pine Road,https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=640&q=80,Neighborhood retail shop for curated daily essentials,Retail,0.0,0,0,[]
-Flourish Wellness Studio,1228 Canyon Drive,https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=640&q=80,Wellness center offering coaching recovery and fitness plans,Health & Wellness,0.0,0,0,[]
-Brightmind Academy,1235 Sunset Boulevard,https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=640&q=80,Learning studio for tutoring workshops and skill development,Education,4.0,1,4,['4★ - My kids really liked it']
-Gearhead Auto Clinic,1242 Riverside Lane,https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=640&q=80,Auto shop for diagnostics maintenance and repair,Automotive,0.0,0,0,[]
-Waypoint Inn,1249 Hillcrest Way,https://images.unsplash.com/photo-1566073771259-6a8506099945?w=640&q=80,Hospitality business for stays bookings and guest services,Travel & Hospitality,0.0,0,0,[]
-The Marquee Room,1256 Broadway,https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=640&q=80,Entertainment venue for events games and performances,Entertainment,0.0,0,0,[]
-Clearwater Home Crew,1263 Jefferson Street,https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=640&q=80,Home services for cleaning repairs and installations,Home Services,0.0,0,0,[]
-Harvest Table Kitchen,1270 Roosevelt Avenue,https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=640&q=80,Family restaurant serving regional dishes and catering,Food,0.0,0,0,[]
-Pinnacle Advisory Group,1277 Lincoln Drive,https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?w=640&q=80,Professional services for scheduling billing and client support,Service,0.0,0,0,[]
-The Everyday Market,1284 Highland Road,https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=640&q=80,Neighborhood retail shop for curated daily essentials,Retail,0.0,0,0,[]
-Revive Health Co.,1291 Meadow Lane,https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=640&q=80,Wellness center offering coaching recovery and fitness plans,Health & Wellness,0.0,0,0,[]
-The Learning Loft,1298 Willow Street,https://images.unsplash.com/photo-1509062522246-3755977927d7?w=640&q=80,Learning studio for tutoring workshops and skill development,Education,0.0,0,0,[]
-The Motor Den,1305 Parkview Avenue,https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=640&q=80,Auto shop for diagnostics maintenance and repair,Automotive,0.0,0,0,[]
-The Resting Grounds,1312 Oak Street,https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=640&q=80,Hospitality business for stays bookings and guest services,Travel & Hospitality,0.0,0,0,[]
-Soundwave Venue,1319 Maple Avenue,https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=640&q=80,Entertainment venue for events games and performances,Entertainment,0.0,0,0,[]
-The Repair Room,1326 Pine Road,https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=640&q=80,Home services for cleaning repairs and installations,Home Services,0.0,0,0,[]
-The Golden Ladle,1333 Canyon Drive,https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=640&q=80,Family restaurant serving regional dishes and catering,Food,0.0,0,0,[]
-Bridgepoint Services,1340 Sunset Boulevard,https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=640&q=80,Professional services for scheduling billing and client support,Service,0.0,0,0,[]
-Redwood Goods Co.,1347 Riverside Lane,https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=640&q=80,Neighborhood retail shop for curated daily essentials,Retail,0.0,0,0,[]
-The Recovery Room,1354 Hillcrest Way,https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=640&q=80,Wellness center offering coaching recovery and fitness plans,Health & Wellness,0.0,0,0,[]
-Keystone Tutoring,1361 Broadway,https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=640&q=80,Learning studio for tutoring workshops and skill development,Education,0.0,0,0,[]
-Ridgeline Auto Care,1368 Jefferson Street,https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=640&q=80,Auto shop for diagnostics maintenance and repair,Automotive,0.0,0,0,[]
-Cliffside Stays,1375 Roosevelt Avenue,https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=640&q=80,Hospitality business for stays bookings and guest services,Travel & Hospitality,0.0,0,0,[]
-Ember Stage Events,1382 Lincoln Drive,https://images.unsplash.com/photo-1598387993441-a364f854cfba?w=640&q=80,Entertainment venue for events games and performances,Entertainment,0.0,0,0,[]
-Riveted Home Services,1389 Highland Road,https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=640&q=80,Home services for cleaning repairs and installations,Home Services,0.0,0,0,[]
+Name,Location,Image,Description,Category,Rating,Number of Reviews,Total Rating Count,Reviews,License,DateAdded
+Ember & Oak Bistro,1207 Oak Street,https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=640&q=80,Family restaurant serving regional dishes and catering,Food,0.0,0,0,[],,
+Meridian Consulting Co.,1214 Maple Avenue,https://images.unsplash.com/photo-1497366216548-37526070297c?w=640&q=80,Professional services for scheduling billing and client support,Service,0.0,0,0,[],,
+Copperleaf General Store,1221 Pine Road,https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=640&q=80,Neighborhood retail shop for curated daily essentials,Retail,0.0,0,0,[],,
+Flourish Wellness Studio,1228 Canyon Drive,https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=640&q=80,Wellness center offering coaching recovery and fitness plans,Health & Wellness,4.0,1,4,['4★ - pretty good'],,
+Brightmind Academy,1235 Sunset Boulevard,https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=640&q=80,Learning studio for tutoring workshops and skill development,Education,4.0,2,8,"['4★ - My kids really liked it', '4★ - gfgf']",,
+Gearhead Auto Clinic,1242 Riverside Lane,https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=640&q=80,Auto shop for diagnostics maintenance and repair,Automotive,0.0,0,0,[],,
+Waypoint Inn,1249 Hillcrest Way,https://images.unsplash.com/photo-1566073771259-6a8506099945?w=640&q=80,Hospitality business for stays bookings and guest services,Travel & Hospitality,0.0,0,0,[],,
+The Marquee Room,1256 Broadway,https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=640&q=80,Entertainment venue for events games and performances,Entertainment,0.0,0,0,[],,
+Clearwater Home Crew,1263 Jefferson Street,https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=640&q=80,Home services for cleaning repairs and installations,Home Services,0.0,0,0,[],,
+Harvest Table Kitchen,1270 Roosevelt Avenue,https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=640&q=80,Family restaurant serving regional dishes and catering,Food,0.0,0,0,[],,
+Pinnacle Advisory Group,1277 Lincoln Drive,https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?w=640&q=80,Professional services for scheduling billing and client support,Service,0.0,0,0,[],,
+The Everyday Market,1284 Highland Road,https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=640&q=80,Neighborhood retail shop for curated daily essentials,Retail,0.0,0,0,[],,
+Revive Health Co.,1291 Meadow Lane,https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=640&q=80,Wellness center offering coaching recovery and fitness plans,Health & Wellness,0.0,0,0,[],,
+The Learning Loft,1298 Willow Street,https://images.unsplash.com/photo-1509062522246-3755977927d7?w=640&q=80,Learning studio for tutoring workshops and skill development,Education,0.0,0,0,[],,
+The Motor Den,1305 Parkview Avenue,https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=640&q=80,Auto shop for diagnostics maintenance and repair,Automotive,0.0,0,0,[],,
+The Resting Grounds,1312 Oak Street,https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=640&q=80,Hospitality business for stays bookings and guest services,Travel & Hospitality,0.0,0,0,[],,
+Soundwave Venue,1319 Maple Avenue,https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=640&q=80,Entertainment venue for events games and performances,Entertainment,0.0,0,0,[],,
+The Repair Room,1326 Pine Road,https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=640&q=80,Home services for cleaning repairs and installations,Home Services,0.0,0,0,[],,
+The Golden Ladle,1333 Canyon Drive,https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=640&q=80,Family restaurant serving regional dishes and catering,Food,0.0,0,0,[],,
+Bridgepoint Services,1340 Sunset Boulevard,https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=640&q=80,Professional services for scheduling billing and client support,Service,0.0,0,0,[],,
+Redwood Goods Co.,1347 Riverside Lane,https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=640&q=80,Neighborhood retail shop for curated daily essentials,Retail,0.0,0,0,[],,
+The Recovery Room,1354 Hillcrest Way,https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=640&q=80,Wellness center offering coaching recovery and fitness plans,Health & Wellness,0.0,0,0,[],,
+Keystone Tutoring,1361 Broadway,https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=640&q=80,Learning studio for tutoring workshops and skill development,Education,0.0,0,0,[],,
+Ridgeline Auto Care,1368 Jefferson Street,https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=640&q=80,Auto shop for diagnostics maintenance and repair,Automotive,0.0,0,0,[],,
+Cliffside Stays,1375 Roosevelt Avenue,https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=640&q=80,Hospitality business for stays bookings and guest services,Travel & Hospitality,0.0,0,0,[],,
+Ember Stage Events,1382 Lincoln Drive,https://images.unsplash.com/photo-1598387993441-a364f854cfba?w=640&q=80,Entertainment venue for events games and performances,Entertainment,3.0,1,3,['3★ - Drinks dont taste very good... Food was amazing!'],,
+Riveted Home Services,1389 Highland Road,https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=640&q=80,Home services for cleaning repairs and installations,Home Services,0.0,0,0,[],,
+fbla,flba,/Users/adityaadhikari/Downloads/Data-Analysis.pdf,fbla,Service,0.0,0,0,[],,
+Devilish Dogs,2373 Morning Way,/Users/adityaadhikari/Downloads/devilshdogs.jpg,Hottest hot dogs in town,Food,0.0,0,0,[],/Users/adityaadhikari/Downloads/FBLA State Coding and Programming.pdf,
